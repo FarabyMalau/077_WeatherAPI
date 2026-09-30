@@ -138,5 +138,62 @@
     <div id="hasil" class="hasil hidden"></div>
     <a id="linkPeta" class="peta hidden" target="_blank" rel="noopener">📍 Lihat di peta</a>
   </div>
+
+<script>
+  const input   = document.getElementById("inputLokasi");
+  const pesan   = document.getElementById("pesan");
+  const hasil   = document.getElementById("hasil");
+  const linkPeta = document.getElementById("linkPeta");
+
+  function baris(label, nilai) {
+    return `<div class="baris">
+              <span class="label">${label}</span>
+              <span class="nilai">${nilai}</span>
+            </div>`;
+  }
+
+  async function cariLokasi() {
+    const kota = input.value.trim();
+
+    if (!kota) {
+      pesan.textContent = "Lokasi belum dimasukkan.";
+      pesan.className = "pesan error";
+      return;
+    }
+
+    pesan.textContent = "⏳ Mencari data...";
+    pesan.className = "pesan";
+    hasil.classList.add("hidden");
+    linkPeta.classList.add("hidden");
+
+    try {
+      const res  = await fetch(`/api/lokasi?kota=${encodeURIComponent(kota)}`);
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
+      // Field dari app.js: kota, negara, provinsi, kecamatan, longitude, latitude
+      hasil.innerHTML =
+        baris("Lokasi", data.kota) +
+        baris("Negara", data.negara) +
+        baris("Provinsi", data.provinsi) +
+        baris("Kecamatan", data.kecamatan) +
+        baris("Longitude", data.longitude) +
+        baris("Latitude", data.latitude);
+
+      linkPeta.href = `https://www.openstreetmap.org/?mlat=${data.latitude}&mlon=${data.longitude}#map=12/${data.latitude}/${data.longitude}`;
+
+      pesan.className = "pesan hidden";
+      hasil.classList.remove("hidden");
+      linkPeta.classList.remove("hidden");
+    } catch (err) {
+      pesan.textContent = "❌ " + err.message;
+      pesan.className = "pesan error";
+    }
+  }
+
+  document.getElementById("btnCari").addEventListener("click", cariLokasi);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") cariLokasi(); });
+</script>
 </body>
 </html>
